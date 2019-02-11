@@ -1,0 +1,62 @@
+---
+output: html_document
+---
+
+#### **To: Mr. Chris Lee**  
+  
+#### **From: Hannah Ha Khuong**  
+  
+#### **Date: `r format(Sys.time(), '%B %d, %Y')`**   
+  
+#### **RE: Office product profitability**  
+
+***
+
+```{r echo = FALSE}
+# Course: BUAN 5210
+# Title: Memorandum in HTML
+# Purpose: Make a memorandum for office sales report 
+# Date: Jan 30
+# Author: Hannah Ha Khuong
+
+```
+
+```{r include = FALSE}
+library(OpenImageR)
+```
+
+As requested, I performed statistical analysis on your company sales data in the period of mid-2010 to mid-2015. With the increasing competition with online retail platforms, choosing which categories and sub-categories to focus on is critical to your company's competitiveness and branding strategies. Secondly, I found that your discount strategy is needed to be reviewed. More than half of your sold items are on sale, and these sales are found to be at your company's loss. 
+
+First of all, I suggest you to stop selling Tables in all segments. Half of your Tables sales is on discount, and you are losing money on this item subcategory (see Graph 1). You should also stop selling Bookcases and Supplies, at least in the Consumers segment. Only in consumers segment that these 2 subcategories are having negative profits, even though the average discount across segments are quite similar (see Graph 2). Maybe the reason is your company can set higher price for Bookcases and Supplies in these 2 segments. 
+
+However, I recommend you to reconsider about selling Bookcases, Supplies and Fasteners. Profits from these 3 subcategories, even if it's above zero, is really low. Maybe there is not a high demand for these subcategories from your company at all. 
+
+Out of four subcategories with low profitability, three of them belongs to the Furniture category. By no surprise, this is the category with the lowest profits. I recommend you you rebrand your company as a company which sells Office Supplies and Technology goods only. It does make sense that customers might have moved to other furniture-focus vendors to have the best customer support specific to furniture, such as free-shipping offer. Given the current company sales on Furniture, I doubt that offer free-shipping will be attractive to customers, since it looks like our Furniture items are not in demand. 
+
+Instead, I recommend you to focus on products that have high number of sales and generate significant profits, such as Binders, Copiers and Phones (see Graph 1). I also recommend you to rebranding your company as an Office Supplies and Technology vendor. 
+
+```{r echo = FALSE}
+img<-OpenImageR::readImage("select-subcat-segment.png")
+imageShow(img)
+```
+
+Secondly, you have to be careful with your discount programs. Discount is related to the loss of your company's money. to put it simple, more discount means less profits. Most items with negative profits were discounted. Items on the highest average discount belong to subcategories of Tables, Machines, Bookcases and Binders. 
+
+Machines has a relatively high revenue, and its number of sales (115 items) is almost double Copiers sales (68 items). However, this subcategory has significantly low profitability. From Graph 2, you can see that Machines subcategory is often on sales. I would recommend you to conduct market research to understand the demand for this subcategory and adjust your discount program accordingly. If there is not high demand for Machines, then you can stop selling these items. 
+
+Binders is an interesting subcategory. Even though the average discount on Binders is the highest (see Graph 2), the profitability is high. We can keep this discount strategy to attract customers to get into our stores, without losing any significant profits. Phones is a subcategory that you might want to focus on Customer segment, rather than in Home Office and Corporate segment. 
+
+```{r echo = FALSE}
+img2<-OpenImageR::readImage("subcat-discount-segment.png")
+imageShow(img2)
+
+```
+
+In conclusion, please take my recommend of rebranding by categories into consideration. Your company needs a competitive edge against growing competitors, and you should have a strong and focused brand. Secondly, discount can be a strong strategy to attract customer and increase profits, but you should review your current discount programs because discount is making your company lose money.
+
+Please do not hesitate to contact me if you have questions.
+
+Best regards,
+
+Hannah. 
+

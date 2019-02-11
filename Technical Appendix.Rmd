@@ -1,0 +1,565 @@
+---
+title: "Technical Appendix"
+author: Hannah Ha Khuong
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+ html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+---
+```{r include = FALSE}
+#Course: BUAN 5210
+#Title: Quick Project 1  
+#Author: Hannah Ha Khuong
+#Date: Jan 26, 2019
+```
+
+```{r include = FALSE}
+# Clear environment of variables and functions
+rm(list = ls(all = TRUE)) 
+
+# Clear environmet of packages
+if(is.null(sessionInfo()$otherPkgs) == FALSE)lapply(paste("package:", names(sessionInfo()$otherPkgs), sep=""), detach, character.only = TRUE, unload = TRUE)
+```
+
+```{r warning = FALSE, message = FALSE}
+#Load packages 
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(gridExtra)
+library(reshape2)
+
+```
+
+#Load, transform and summarize data 
+```{r}
+#Load data
+data <- read_csv("5210_W19_QP1_Data.csv")
+
+#Make profit and revenue in a same column
+meltdata <- melt(data,id.vars = c("Region", "Sub-Category","Category", "Segment") , measure.vars = c("Revenue", "Profit"))
+```
+
+
+```{r message = FALSE}
+#Graph functions
+boxplot <- function(b){
+  b + geom_boxplot(stat = "boxplot")+
+    guides(fill=FALSE)+
+    theme_bw() + theme(panel.border = element_blank(), 
+                       panel.grid.major = element_blank(),
+                       panel.grid.minor = element_blank()) 
+}
+count_bargraph <- function(b){
+  b + geom_bar(fill = "tan", color = "black") +
+    guides(fill=FALSE)+
+    theme_bw() + theme(panel.border = element_blank(), 
+                       panel.grid.major = element_blank(),
+                       panel.grid.minor = element_blank()) + 
+    labs(y ="Count")
+}
+
+bargraph <- function(b){
+  b + stat_summary(geom = "bar", fun.y = "sum", color = "black", fill = "tan") +
+    guides(fill=FALSE) +
+    theme_bw() + theme(panel.border = element_blank(), 
+                       panel.grid.major = element_blank(),
+                       panel.grid.minor = element_blank())+ 
+    scale_fill_brewer(palette="Pastel1")
+}
+
+bargraph_dodge <- function(b){
+  b + stat_summary(geom = "bar", fun.y = "sum", position = "dodge", color = "black") +
+    theme_bw()+ theme(panel.border = element_blank())+
+    scale_fill_brewer(palette="Pastel2")
+}
+
+distribution <- function(b){
+  b + geom_density() +
+    theme_bw()
+}
+
+scatterplot <- function(b){
+  b + geom_point()  +
+    theme_bw()
+}
+```
+
+```{r message = FALSE}
+summary(data)
+```
+
+* Most order contains 2-5 items. 
+* Revenue is highly skewed to the right. 
+* The range of profits is wide, but the mean and median show that the profitablity is not high (mean is $28 and median is $8)
+* Discount is often at 15-20%. 
+
+#EDA Note 
+* This EDA contains 3 main parts:
+    + Univariate analysis
+    + Multivariate analysis
+    + Questions 
+  
+* The values displayed on graphs for Revenue and Profit are **sums of Revenue** and **sums of Profits**. I want to understand how much total revenue/profit a region/category/subategory/segment can generate, instead of the mean or median of all orders. 
+
+#Univariate analysis 
+
+## Categorical variables 
+
+###Region
+
+```{r message = FALSE}
+#Make summary table, count bargraph
+Region_tab <- rbind(table(data$Region),
+                    prop.table(table(data$Region))*100)
+row.names(Region_tab) <- c("Count", "Percent")
+round(Region_tab, 2)
+
+count_bargraph(ggplot(data, aes(Region)))
+```
+
+* South region has the fewest orders while West region has the most orders. 
+
+###Category
+```{r message = FALSE}
+#Make summary table, count bargraph
+Cat_tab <- rbind(table(data$Category),
+                    prop.table(table(data$Category))*100)
+row.names(Cat_tab) <- c("Count","Percent")
+round(Cat_tab, 2)
+
+
+count_bargraph(ggplot(data, aes(Category)))
+```
+
+* Office Suplies items are the most sold. 
+
+###Sub-Category
+```{r message = FALSE}
+#Make summary table, count bargraph
+subCat_tab <- rbind(table(data$`Sub-Category`),
+                    prop.table(table(data$`Sub-Category`))*100)
+row.names(subCat_tab) <- c("Count","Percent")
+round(subCat_tab, 2)
+
+
+count_bargraph(ggplot(data, aes(`Sub-Category`))) + coord_flip()
+```
+
+* The numbers of machines and copiers sold are the lowest.
+* The number of papers and binders sold are the highest. 
+
+###Segment
+```{r message = FALSE}
+#Make summary table, count bargraph
+seg_tab <- rbind(table(data$Segment),
+                    prop.table(table(data$Segment))*100)
+row.names(seg_tab) <- c("Count","Percent")
+round(seg_tab, 2)
+
+
+count_bargraph(ggplot(data, aes(Segment)))
+```
+ 
+* The number of orders from Customers is the highest, then comes the number of orders in Corporate and Home Office segment. 
+
+### Discount
+```{r message = FALSE}
+#Make summary table
+
+count_bargraph(ggplot(data, aes(Discount)))
+```
+
+* Most discount is at 20% level.
+* The number of items on discount is really high.
+
+##Continuous variables 
+
+### Revenue
+```{r message = FALSE}
+#Create density graph
+distribution(ggplot(data, aes(Revenue)))
+
+```
+
+* Revenue is highly skewed to the right.
+* Most items bring revenue of less than $2,500. 
+
+### Profit 
+```{r message = FALSE}
+#Create density graph
+distribution(ggplot(data, aes(Profit)))
+```
+
+* Distribution of Profits is leptokurtic. Most orders' profits is in the range of -$1,000 to $1,000. 
+
+#Multivariate Analysis 
+
+```{r message = FALSE} 
+#Creat summary function for Profit 
+sum_profit <- sum(data$Profit)
+
+summary_function <- function(var) {
+  var <- enquo(var)
+  print(var)
+  data %>% 
+  group_by(!!var) %>%
+  summarize(
+    count = n(),
+    profit_percentage = round(((sum(Profit) / sum_profit)*100), 2),
+    mean = mean(Profit),
+    sum = sum(Profit),
+    min = min(Profit),
+    max = max(Profit)
+  )
+}
+
+#Creat summary function for Revenue 
+sum_revenue <- sum(data$Revenue)
+
+rev_summary_function <- function(var) {
+  var <- enquo(var)
+  print(var)
+  data %>% 
+  group_by(!!var) %>%
+  summarize(
+    count = n(),
+    revenue_percentage  = round(((sum(Revenue) / sum_revenue)*100), 2),
+    mean = mean(Revenue),
+    sum = sum(Revenue),
+    min = min(Revenue),
+    max = max(Revenue)
+  )
+}
+
+```
+
+
+##Region 
+###Profit
+```{r message = FALSE}
+#Summary and boxplot
+summary_function(Region)
+boxplot(ggplot(data, aes(x = Region, y = Profit))) +labs(title = "Profit in four regions")
+```
+
+###Revenue 
+```{r message = FALSE}
+#Summary and boxplot
+rev_summary_function(Region)
+boxplot(ggplot(data, aes(x = Region, y = Revenue)))+labs(title = "Revenue in four regions")
+
+```
+
+###Sum of revenue and profit in relation to each other
+```{r message = FALSE}
+#Cluster bargraph with sum of profits and revenue 
+bargraph_dodge(ggplot(meltdata, aes(x = Region, y = value, group = variable, fill = variable))) + 
+  labs(y = "Monetary Value", title = "Revenue and Profit in four regions") + 
+  guides(fill= guide_legend("Monetary value"))
+
+
+```
+
+* West region has the highest total profit while Central and South region have the lowest profits.
+* West region also has the highest total revenue. South region has the least revenue. 
+    + --> a lot of sales in Central do not generate profits, compared to South region. 
+
+##Category
+
+###Profit
+```{r message = FALSE}
+#Summary and boxplot
+summary_function(Category)
+boxplot(ggplot(data, aes(x = Category, y = Profit)))
+```
+
+###Revenue
+```{r message = FALSE}
+#Summary and boxplot
+rev_summary_function(Category)
+boxplot(ggplot(data, aes(x = Category, y = Revenue)))
+
+```
+
+###Sum of revenue and profit in relation to each other
+```{r message = FALSE}
+#Cluster bargraph with sum of profits and revenue 
+bargraph_dodge(ggplot(meltdata, aes(x = Category, y = value, group = variable, fill = variable))) + 
+  labs(y = "Monetary Value", title = "Revenue and Profit in different Categories") + 
+  guides(fill= guide_legend("Monetary value"))
+
+```
+
+* Technology category is the most profitable while Furniture category brings back the lowest profits. 
+* Furniture has higher revenue than Home Office --> Furniture is selling without profits on a lot of orders, compared to Home Office category. 
+
+##Sub-category 
+
+###Profit
+```{r message = FALSE}
+#Summary and boxplot
+summary_function(`Sub-Category`)
+boxplot(ggplot(data, aes(x = `Sub-Category`, y = Profit))) + 
+  coord_flip()
+```
+
+###Revenue
+```{r message = FALSE}
+#Summary and boxplot
+rev_summary_function(`Sub-Category`)
+boxplot(ggplot(data, aes(x = `Sub-Category`, y = Revenue))) + coord_flip()
+```
+
+###Sum of revenue and profit in relation to each other
+```{r message = FALSE}
+#Cluster bargraph with sum of profits and revenue 
+bargraph_dodge(ggplot(meltdata, aes(x = `Sub-Category`, y = value, group = variable, fill = variable))) + 
+  labs(y = "Monetary Value", title = "Revenue and Profit in different Sub-Categories") + 
+  guides(fill= guide_legend("Monetary value")) + coord_flip()
+
+
+```
+
+* There are 3 subcategories that have negative profits: Table, Supplies, and Book cases. 
+* Subcategory Table is selling at the company's loss, even though this subcategory has a moderate revenue compared to other subcategories. 
+* Copiers do not have high revenue, but has the highest profit --> the profits per order on this subcategory is really high.  
+* Papers has the best profit/revenue ratio. 
+* Accessories also has a good profit/revenue ratio. 
+
+##Segment 
+
+###Profit
+```{r message = FALSE}
+#Summary and boxplot
+summary_function(Segment)
+
+boxplot(ggplot(data, aes(x = Segment, y = Profit)))
+```
+
+###Revenue
+```{r message = FALSE}
+#Summary and boxplot
+rev_summary_function(Segment)
+ 
+boxplot(ggplot(data, aes(x = Segment, y = Revenue)))
+```
+
+###Sum of revenue and profit in relation to each other
+```{r echo = FALSE, message = FALSE}
+#Cluster bargraph with sum of profits and revenue 
+bargraph_dodge(ggplot(meltdata, aes(x = Segment, y = value, group = variable, fill = variable))) + 
+  labs(y = "Monetary Value", title = "Revenue and Profit in different Segment") + 
+  guides(fill= guide_legend("Monetary value"))
+```
+
+
+*Customer segment has the highest revenue and profits. 
+
+
+#Questions proposed
+
+## Is discount making company lose money? 
+
+### Correlational Analysis 
+
+```{r message = FALSE}
+#Scatterplot to see relationship between profit, revenue and discount
+scatterplot(ggplot(data, aes(x = Profit, y = Revenue, color = Discount))) +
+    stat_smooth(method = lm)
+```
+ 
+* The less revenue an order is, the less profit company can make. Revenue and Profit have a positive correlation. 
+* Most of negative profit is related to high discount. 
+
+```{r message = FALSE}
+#Scatterplot to see relationship between profit, revenue and discount
+c2 <- scatterplot(ggplot(data, aes(x = Discount, y = Profit)))
+
+c1 <- scatterplot(ggplot(data, aes(x = Discount, y = Revenue)))
+
+grid.arrange(c2, c1, 
+             nrow = 1, 
+             top = "Discount correlation with Profit and Revenue")
+```
+
+* Greater discount makes greater loss for the company while revenue is not necessarily higher.
+
+### Which category/subcatetory is on discount? 
+
+```{r message = FALSE}
+#Category
+data %>% 
+  group_by(Category) %>%
+  summarize(
+    mean= mean(Discount),
+    median = median(Discount),
+    min = min(Discount),
+    max = max(Discount) 
+  )
+
+d1 <- ggplot(data, aes(x = Category, y = Profit, fill = Discount)) + geom_col(width = 0.5) + coord_flip() +
+    theme_bw() + theme(panel.border = element_blank()) + guides(fill= FALSE)
+
+#Subcategory
+data %>% 
+  group_by(`Sub-Category`) %>%
+  summarize(
+    mean = mean(Discount),
+    median = median(Discount),
+    min = min(Discount),
+    max = max(Discount) 
+  )
+
+d2<- ggplot(data, aes(x = `Sub-Category`, y = Profit, fill = Discount)) + geom_col() + coord_flip() +
+    theme_bw() + theme(panel.border = element_blank()) +labs(x = "Sub-category")
+
+#Arrange and save image 
+grid.arrange(d1, d2, 
+             nrow = 2,
+             top = "Which category/subcategory on discount the most? \n Category 'Office Supplies' and Sub-category 'Binders' & 'Machines' are on sale the most.",
+             heights = c(1/3, 2/3))
+
+```
+
+```{r message = FALSE}
+#Graph average discount level for each Subcategory
+ggplot(data, aes(x = `Sub-Category`, y = Discount)) + 
+         stat_summary(geom = "bar", fun.y = "mean", color = "black", fill = "tan", width = 0.7) +
+    guides(fill=FALSE) +
+    theme_bw() + 
+    theme(panel.border = element_blank(), 
+                       panel.grid.major = element_blank(),
+                       panel.grid.minor = element_blank()) + 
+    scale_fill_brewer(palette="Pastel1")+
+    coord_flip() +
+    labs(title = "Average Discount level of each Sub-category") 
+```
+
+
+* Most subcategories has discount at less than 10% level. 
+* Binders has the highest discount level at 37% on average. 
+* Tables, Bookcases and Machines also have high level of discount at more than 20%. 
+    + Almost half of Machines sales are on discount.
+    + About 2/3 of Tables sales are on discount. 
+* Appliances does not discount frequently, but they offer high discount if this subcategory goes on sale. 
+
+## Which segment should company focus on? 
+```{r message = FALSE}
+#Segment and profit 
+data %>% 
+  group_by(Segment) %>%
+  summarize(
+    mean = mean(Profit),
+    sum = sum(Profit),
+    min = min(Profit),
+    max = max(Profit) 
+  )
+
+#Draw bargraph
+bargraph_dodge(ggplot(data, aes(x = Segment, y = Profit, fill = Region))) +
+  labs(title ="Which segment is the most profitable?",
+       subtitle = "Segment 'Consumer' is the most profitable, but profits depend on regions") +
+  scale_fill_brewer(palette="Pastel1")
+  
+#Draw col graphs to understand which segment discount more
+ggplot(data) + geom_col(aes(x = Segment, y = Profit, fill = Discount)) + coord_flip() +
+    theme_bw() + theme(panel.border = element_blank()) + ggtitle("Segment Costumer yields most profit, but also\n goes on discount more frequently")
+```
+
+* Customers segment is the most profitable one, especially in the West region.
+* Central region's best segment is Corporate segment. 
+* South region should not focus on Home Office segment.
+
+## Which caegory/ sub-category to invest or drop based on segment
+### Category
+```{r message = FALSE}
+#Category and Profit, divided by regions
+data %>% 
+  group_by(Segment, Category) %>%
+  summarize(
+    mean_profit = mean(Profit),
+    median_profit = median(Profit),
+    min_profit = min(Profit),
+    max_profit = max(Profit) 
+  )
+
+#Cluster bargraph
+bargraph_dodge(ggplot(data, aes(x = Category, y = Profit, fill = Segment))) + coord_flip() +
+  labs(title = "Profit by Category, divided in four regions",subtitle = "Furniture is the least profitable in Central region")
+```
+
+* The only category is losing money is Furniture sold in Center region. 
+
+### Sub-category
+```{r message = FALSE}
+#Subcategory and Profit, divided by regions
+data %>% 
+  group_by(Segment, `Sub-Category`) %>%
+  summarize(
+    mean_profit = mean(Profit),
+    median_profit = median(Profit),
+    min_profit = min(Profit),
+    max_profit = max(Profit) 
+  )
+#Cluster bargraph
+bargraph_dodge(ggplot(data, aes(x = `Sub-Category`, y = Profit, fill = Segment))) + coord_flip()+
+  labs(x = "Sub-Category", 
+       title = "Profits by Sub-Categories in different Segment ") 
+ggsave("subcat-profit-segment.png")
+
+
+```
+
+# Graph for memorandum 
+
+```{r message = FALSE }
+#Create names and order of graph
+subcat_order <- c("Tables", "Bookcases", "Supplies", "Fasteners", "Machines", "Phones", "Copiers", "Binders")
+
+#Copy dataframe 
+select_subcat <- data
+
+#Make graphs for memo 
+select_subcat %>% 
+  filter(`Sub-Category` == "Tables"|`Sub-Category` == "Supplies"|`Sub-Category` == "Fasteners"|
+           `Sub-Category` =="Bookcases"|`Sub-Category` == "Phones"| `Sub-Category` =="Machines"|
+           `Sub-Category` == "Copiers"|`Sub-Category` =="Binders") %>% 
+  ggplot(aes(x = factor( `Sub-Category`, levels=subcat_order), y = Profit, fill = Segment))+
+  stat_summary(geom = "bar", fun.y = "sum", position = "dodge", color = "black") +
+    theme_bw()+ 
+  theme(panel.border = element_blank(), 
+                       panel.grid.major = element_blank(),
+                       panel.grid.minor = element_blank())+
+    scale_fill_brewer(palette="Pastel2") + coord_flip()+
+  labs(x = "Sub-Category", 
+       title = "Graph 1. Total Profits by Sub-Categories in different Segment ") 
+
+ggsave("select-subcat-segment.png")
+
+
+
+```
+
+```{r message = FALSE}
+#Make second graph for memo
+select_subcat %>% 
+  filter(`Sub-Category` == "Tables"|`Sub-Category` == "Supplies"|`Sub-Category` == "Fasteners"|
+           `Sub-Category` =="Bookcases"|`Sub-Category` == "Phones"|`Sub-Category` =="Machines"|
+           `Sub-Category` == "Copiers"|`Sub-Category` =="Binders") %>% 
+  ggplot(aes(x = factor(`Sub-Category`, levels=subcat_order), y = Discount, fill = Segment))+
+  stat_summary(geom = "bar", fun.y = "mean", position = "dodge", color = "black", width = 0.75) +
+    theme_bw()+ 
+    theme(panel.border = element_blank(), 
+                       panel.grid.major = element_blank(),
+                       panel.grid.minor = element_blank()) + coord_flip()  + 
+  labs(x = "Sub-Category", 
+       title = "Graph 2. Average Discount by Sub-Categories in different Segment") +
+  scale_fill_brewer(palette="Pastel2")
+ggsave("subcat-discount-segment.png")
+
+```
+
